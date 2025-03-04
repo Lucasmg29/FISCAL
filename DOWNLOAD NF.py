@@ -196,7 +196,7 @@ def executar_rotina():
 # Criando a janela principal
 root = tk.Tk()
 root.title("Execução de Rotinas")
-root.geometry("300x275")  # Ajuste para comportar os widgets
+root.geometry("300x250")  # Ajuste para comportar os widgets
 root.configure(bg='#f2f2f2')
 root.resizable(False, False)  # Impede o redimensionamento da janela
 
