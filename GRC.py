@@ -1770,7 +1770,7 @@ entry_senha_sap.grid(row=3, column=0, sticky="ew", pady=(0, 5))
 
 # Centralizar o botão
 button_executar = tk.Button(
-    frame, text="Atualização", command=rotina1, **button_style, width=25
+    frame, text="Teste Mikael", command=rotina1, **button_style, width=25
 )
 button_executar.grid(row=4, column=0, pady=(10, 10), sticky="ew")
 
