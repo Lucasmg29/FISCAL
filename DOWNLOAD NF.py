@@ -198,7 +198,7 @@ root = tk.Tk()
 root.title("Execução de Rotinas")
 root.geometry("265x300")  # Ajuste para comportar os widgets
 root.configure(bg='#f2f2f2')
-root.resizable(False, False)  # Impede o redimensionamento da janela
+# root.resizable(False, False)  # Impede o redimensionamento da janela
 
 # Fonte personalizada
 root.option_add("*Font", "Amiko 10")
