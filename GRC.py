@@ -1713,7 +1713,7 @@ root = tk.Tk()
 root.title("GRC")
 root.geometry("235x450")  # Ajuste para comportar melhor os widgets
 root.configure(bg="#f2f2f2")
-root.resizable(False, False)  # Impede o redimensionamento da janela
+# root.resizable(False, False)  # Impede o redimensionamento da janela
 
 # Fonte personalizada
 root.option_add("*Font", "Amiko 10")
