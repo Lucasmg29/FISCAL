@@ -1460,7 +1460,7 @@ def email_obras():
 
     # Selecionar as colunas "E-mail" e "Local", filtrar as linhas onde essas colunas não estão vazias e onde "Local" não é "Matriz"
     df_emails_obras = df[["E-mail", "Local"]].dropna(subset=["E-mail", "Local"])
-    # df_emails_obras = df_emails_obras[df_emails_obras["Local"] != "Matriz"]
+    df_emails_obras = df_emails_obras[df_emails_obras["Local"] != "Matriz"]
 
     # Converter a coluna "Local" para inteiros (remover casas decimais)
     df_emails_obras["Local"] = df_emails_obras["Local"].astype(int)
