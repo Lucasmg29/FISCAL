@@ -1752,7 +1752,7 @@ def abrir_senha():
 # Criando a janela principal
 root = tk.Tk()
 root.title("GRC")
-root.geometry("235x400")  # Ajuste para comportar melhor os widgets
+root.geometry("300x425")  # Ajuste para comportar melhor os widgets
 root.configure(bg="#f2f2f2")
 root.resizable(False, False)  # Impede o redimensionamento da janela
 
