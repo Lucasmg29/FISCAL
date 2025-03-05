@@ -131,8 +131,8 @@ def fazer_login():
     session.findById("wnd[0]").sendVKey(8)
     try:
         session.findById("wnd[0]").sendVKey(45)
-    except:
-        session.findById("wnd[1]").sendVKey(0)
+    # except:
+    #     session.findById("wnd[1]").sendVKey(0)
         session.findById("wnd[1]").sendVKey(0)
         session.findById("wnd[0]").sendVKey(45)
 
