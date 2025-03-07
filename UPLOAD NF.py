@@ -207,8 +207,6 @@ def SAP_NF():
                         # Executar o código SAP GUI usando as variáveis NF e MIGO
                         session.findById("wnd[0]/usr/txtSO_BELNR-LOW").text = migo
                         session.findById("wnd[0]/usr/txtSO_XBLNR-LOW").text = nf
-                        session.findById("wnd[0]/usr/txtSO_XBLNR-LOW").setFocus()
-                        session.findById("wnd[0]/usr/txtSO_XBLNR-LOW").caretPosition = 4
                         session.findById("wnd[0]").sendVKey(8)
                         session.findById(
                             "wnd[0]/usr/cntlGRID1/shellcont/shell"
