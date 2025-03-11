@@ -164,6 +164,24 @@ def excluir_arquivos(pasta):
 
 # In[8]:
 
+def exibir_falhas(falhas_anexar):
+    import tkinter
+    from tkinter import messagebox
+
+    if not falhas_anexar:
+        return  # Se não houver falhas, não faz nada
+
+    root = tkinter.Tk()
+    root.withdraw()  # Oculta a janela principal
+
+    # Monta a string com as falhas
+    texto_falhas = "\n".join(falhas_anexar)
+    messagebox.showerror("Falhas ao Anexar", f"As seguintes notas falharam:\n{texto_falhas}")
+
+    root.destroy()
+
+
+
 
 def SAP_NF():
     # Fazer login no SAP
@@ -179,62 +197,79 @@ def SAP_NF():
     session.findById("wnd[0]/tbar[0]/okcd").text = "mir5"
     session.findById("wnd[0]").sendVKey(0)
 
-    try:
-        # Verifica se a pasta existe
-        if os.path.exists(sap_gui_path):
-            for arquivo in os.listdir(sap_gui_path):
-                caminho_arquivo = os.path.join(sap_gui_path, arquivo)
-                if os.path.isfile(caminho_arquivo):
-                    # Armazenando o nome do arquivo
-                    nome_arquivo = arquivo
+    # Lista para armazenar nomes de arquivos (ou NFs) que falharam
+    falhas_anexar = []
 
-                    # Divide o nome do arquivo em partes com base no traço "-"
-                    partes = arquivo.split("-")
+    # Verifica se a pasta existe
+    if os.path.exists(sap_gui_path):
+        for arquivo in os.listdir(sap_gui_path):
+            caminho_arquivo = os.path.join(sap_gui_path, arquivo)
+            if os.path.isfile(caminho_arquivo):
+                
+                # Armazenando o nome do arquivo
+                nome_arquivo = arquivo
 
-                    # Verifica se o nome do arquivo segue o padrão esperado
-                    if len(partes) >= 3:
-                        nf = partes[
-                            0
-                        ]  # Primeiro valor, antes do primeiro traço, é a NF
-                        migo = partes[
-                            1
-                        ]  # Segundo valor, entre o primeiro e o segundo traço, é a MIGO
+                # Divide o nome do arquivo em partes com base no traço "-"
+                partes = arquivo.split("-")
 
-                        print(f"Processando arquivo: {arquivo}")
-                        print(f"NF: {nf}, MIGO: {migo}")
-                        print(f"Nome do arquivo: {nome_arquivo}")
+                # Verifica se o nome do arquivo segue o padrão esperado
+                if len(partes) >= 3:
+                    nf = partes[
+                        0
+                    ]  # Primeiro valor, antes do primeiro traço, é a NF
+                    migo = partes[
+                        1
+                    ]  # Segundo valor, entre o primeiro e o segundo traço, é a MIGO
 
-                        # Executar o código SAP GUI usando as variáveis NF e MIGO
-                        session.findById("wnd[0]/usr/txtSO_BELNR-LOW").text = migo
-                        session.findById("wnd[0]/usr/txtSO_XBLNR-LOW").text = nf
-                        session.findById("wnd[0]").sendVKey(8)
-                        session.findById(
-                            "wnd[0]/usr/cntlGRID1/shellcont/shell"
-                        ).clickCurrentCell()
-                        session.findById(
-                            "wnd[0]/titl/shellcont/shell"
-                        ).pressContextButton("%GOS_TOOLBOX")
-                        session.findById(
-                            "wnd[0]/titl/shellcont/shell"
-                        ).selectContextMenuItem("%GOS_PCATTA_CREA")
-                        session.findById("wnd[1]/usr/ctxtDY_PATH").text = sap_gui_path
-                        session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = (
-                            nome_arquivo
-                        )
-                        session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = (
-                            25
-                        )
-                        session.findById("wnd[1]").sendVKey(0)
-                        session.findById("wnd[0]").sendVKey(12)
-                        session.findById("wnd[0]").sendVKey(12)
+                    print(f"Processando arquivo: {arquivo}")
+                    print(f"NF: {nf}, MIGO: {migo}")
+                    print(f"Nome do arquivo: {nome_arquivo}")
+                    
+                else:
+                    print(f"O arquivo '{arquivo}' não segue o padrão esperado.")
+                
 
-                        print(f"Arquivo {arquivo} processado com sucesso.")
-                    else:
-                        print(f"O arquivo '{arquivo}' não segue o padrão esperado.")
-        else:
-            print("A pasta especificada não existe.")
-    except Exception as e:
-        print(f"Ocorreu um erro ao processar os arquivos e executar no SAP GUI: {e}")
+
+            try:
+                    # Executar o código SAP GUI usando as variáveis NF e MIGO
+                    session.findById("wnd[0]/usr/txtSO_BELNR-LOW").text = migo
+                    session.findById("wnd[0]/usr/txtSO_XBLNR-LOW").text = nf
+                    session.findById("wnd[0]").sendVKey(8)
+
+                    session.findById(
+                        "wnd[0]/usr/cntlGRID1/shellcont/shell"
+                    ).clickCurrentCell()
+
+                    # session.findById("wnd[0]").sendVKey(21)
+                    
+                    session.findById(
+                        "wnd[0]/titl/shellcont/shell"
+                    ).pressContextButton("%GOS_TOOLBOX")
+                    session.findById(
+                        "wnd[0]/titl/shellcont/shell"
+                    ).selectContextMenuItem("%GOS_PCATTA_CREA")
+                    session.findById("wnd[1]/usr/ctxtDY_PATH").text = sap_gui_path
+                    session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = (
+                        nome_arquivo
+                    )
+                    session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = (
+                        25
+                    )
+                    session.findById("wnd[1]").sendVKey(0)
+                    session.findById("wnd[0]").sendVKey(12)
+                    session.findById("wnd[0]").sendVKey(12)
+
+                    print(f"Arquivo {arquivo} processado com sucesso.")
+
+            except Exception as e:
+                print(f"Ocorreu um erro ao processar os arquivos e executar no SAP GUI: {e}")
+                falhas_anexar.append(arquivo)
+
+
+    else:
+        print("A pasta especificada não existe.")
+    
+    return falhas_anexar
 
 
 # In[10]:
@@ -250,17 +285,34 @@ def obter_data_criacao(arquivo):
     return data_criacao
 
 
-def mover_arquivos_por_empreendimento(caminho_base, pasta_origem):
+def mover_arquivos_por_empreendimento(caminho_base, pasta_origem, falhas_anexar=None):
+    """
+    Move os arquivos .pdf de 'pasta_origem' para a estrutura de pastas em 'caminho_base',
+    ignorando aqueles que estejam na lista de falhas_anexar.
+    - caminho_base: onde ficam as pastas dos empreendimentos (cada uma começando em "00")
+    - pasta_origem: onde estão os arquivos que devem ser movidos após anexar no SAP
+    - falhas_anexar: lista de nomes de arquivos que falharam ao anexar no SAP.
+                     Se None, será tratada como lista vazia.
+    """
+    if falhas_anexar is None:
+        falhas_anexar = []
+
     # Lista todos os arquivos na pasta de origem
     for arquivo in os.listdir(pasta_origem):
-        if arquivo.endswith(".pdf"):
+        # Se o arquivo está na lista de falhas, não deve ser movido
+        if arquivo in falhas_anexar:
+            print(f"[SKIP] Pulando arquivo '{arquivo}', pois não foi anexado com sucesso.")
+            continue
+
+        # Só processa arquivos PDF
+        if arquivo.lower().endswith(".pdf"):
             # Extrai os 4 últimos dígitos do nome do arquivo (sem a extensão .pdf)
-            codigo_arquivo = arquivo[
-                -8:-4
-            ]  # Pega os últimos 4 dígitos antes da extensão
+            # Exemplo: "1234.pdf" -> arquivo[-8:-4] = "1234" (dependendo do comprimento do nome)
+            codigo_arquivo = arquivo[-8:-4]
+
+            caminho_origem = os.path.join(pasta_origem, arquivo)
 
             # Obtém a data de criação do arquivo
-            caminho_origem = os.path.join(pasta_origem, arquivo)
             data_criacao = obter_data_criacao(caminho_origem)
             ano = data_criacao.strftime("%Y")
             mes = data_criacao.strftime("%m.%Y")
@@ -270,43 +322,30 @@ def mover_arquivos_por_empreendimento(caminho_base, pasta_origem):
             for pasta in os.listdir(caminho_base):
                 caminho_empreendimento = os.path.join(caminho_base, pasta)
 
-                # Verifica se a pasta começa com "00" e se os 4 primeiros dígitos da pasta correspondem ao código do arquivo
+                # Verifica se a pasta corresponde ao padrão e ao código do arquivo
                 if (
                     os.path.isdir(caminho_empreendimento)
                     and pasta.startswith("00")
                     and pasta[:4] == codigo_arquivo
                 ):
-                    print(f"Movendo arquivo {arquivo} para o empreendimento: {pasta}")
+                    print(f"[MOVE] Arquivo '{arquivo}' -> Empreendimento: '{pasta}'")
 
                     # Cria o caminho completo para a pasta com base na data de criação do arquivo
                     caminho_ano = os.path.join(caminho_empreendimento, ano)
                     caminho_mes = os.path.join(caminho_ano, mes)
                     caminho_dia = os.path.join(caminho_mes, dia)
 
-                    # Cria a pasta do ano se não existir
-                    if not os.path.exists(caminho_ano):
-                        os.makedirs(caminho_ano)
-                        print(f"Pasta {caminho_ano} criada.")
-
-                    # Cria a pasta do mês se não existir
-                    if not os.path.exists(caminho_mes):
-                        os.makedirs(caminho_mes)
-                        print(f"Pasta {caminho_mes} criada.")
-
-                    # Cria a pasta do dia se não existir
-                    if not os.path.exists(caminho_dia):
-                        os.makedirs(caminho_dia)
-                        print(f"Pasta {caminho_dia} criada.")
+                    # Cria as pastas de ano, mês, dia se não existirem
+                    os.makedirs(caminho_dia, exist_ok=True)
 
                     # Move o arquivo para a pasta do dia correspondente
                     caminho_destino = os.path.join(caminho_dia, arquivo)
                     shutil.move(caminho_origem, caminho_destino)
 
-                    print(f"Arquivo {arquivo} movido para {caminho_destino}.")
+                    print(f"[OK] Arquivo '{arquivo}' movido para '{caminho_destino}'.")
                     break  # Sai do loop para não verificar outras pastas
 
-    print("Processo de movimentação concluído.")
-
+    print("[INFO] Processo de movimentação concluído.")
 
 # In[11]:
 
@@ -315,11 +354,21 @@ def executar_rotina():
     pasta = pasta_origem()
     excluir_arquivos(sap_gui_path)
     copiar_arquivos(pasta, sap_gui_path)
-    SAP_NF()
+    
+    # Agora, ao chamar SAP_NF(), guarde o retorno em uma variável
+    falhas_anexar = SAP_NF()
+
     close_process("saplogon.exe")
     excluir_arquivos(sap_gui_path)
+    
     caminho_base = r"G:\Drives compartilhados\Fiscal_Arquivo_de_Notas\FISCAL_SERVIÇOS"
-    mover_arquivos_por_empreendimento(caminho_base, pasta)
+
+    # Caso você tenha ajustado a função de mover para receber as falhas:
+    mover_arquivos_por_empreendimento(caminho_base, pasta, falhas_anexar)
+
+    # Finalmente, exiba as falhas se houver
+    exibir_falhas(falhas_anexar)
+
     messagebox.showinfo("Sucesso", "NF's anexadas com sucesso a MIGO no SAP!")
 
 
