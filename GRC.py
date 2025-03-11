@@ -1385,7 +1385,7 @@ def email_csc():
 
     # Construir o e-mail
     msg = MIMEMultipart()
-    msg["Subject"] = "Pedidos de compra PENDENTES de Ajuste"
+    msg["Subject"] = "Notas fiscais de materiais disponíveis para lançamento, Sem Saldo e Sem Pedido"
     msg["From"] = email_remessa
     msg["To"] = ", ".join(emails_list)  # Enviar para todos os e-mails listados
 
@@ -1495,7 +1495,7 @@ def email_matriz():
 
     # Construir o e-mail
     msg = MIMEMultipart()
-    msg["Subject"] = "Pedidos de compra PENDENTES de Ajuste"
+    msg["Subject"] = "Notas fiscais de materiais disponíveis para lançamento, Sem Saldo e Sem Pedido"
     msg["From"] = email_remessa
     msg["To"] = ", ".join(emails_list)
     msg["CC"] = ", ".join(cc_emails)
