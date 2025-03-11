@@ -12,6 +12,11 @@ from tkinter import messagebox
 import tkinter as tk
 import warnings
 
+import json
+from cryptography.fernet import Fernet
+import base64
+
+
 # Bibliotecas de terceiros
 import pandas as pd
 import openpyxl
@@ -25,6 +30,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
+from email.mime.application import MIMEApplication
 import mimetypes
 
 from email import encoders
@@ -1345,6 +1351,7 @@ def GRC_ETL():
     # Salvar as mudanças
     wb.save(caminho_arquivo)
 
+
 def email_csc():
     usuario_gmail, senha_gmail = credenciais_login_email()
 
@@ -1371,10 +1378,7 @@ def email_csc():
         "isoleide.cubas@rogga.com.br",
         "marcelo.laude@rogga.com.br",
         "anderson.alexi@rogga.com.br",
-
-
     ]
-
 
     # Criar a lista de e-mails
     emails_list = df_emails_filtrados
@@ -1399,7 +1403,7 @@ def email_csc():
     <p>e-mail: fiscal.material@rogga.com.br<p>
     """
     msg.attach(MIMEText(corpo_email, "html"))
-   # 📌 **Verificação se o arquivo realmente existe antes de anexá-lo**
+    # 📌 **Verificação se o arquivo realmente existe antes de anexá-lo**
     if not os.path.isfile(arquivo_anexo):
         print(f"❌ Erro: O arquivo '{arquivo_anexo}' não foi encontrado.")
     else:
@@ -1420,8 +1424,7 @@ def email_csc():
             # Adiciona cabeçalho correto com nome do arquivo
             filename = "Célula Fiscal - GRC"
             parte_anexo.add_header(
-                "Content-Disposition",
-                f'attachment; filename="{filename}"'
+                "Content-Disposition", f'attachment; filename="{filename}"'
             )
 
             # Anexa ao e-mail
@@ -1441,6 +1444,106 @@ def email_csc():
     except Exception as e:
         print(f"❌ Falha ao enviar o e-mail: {e}")
 
+
+def email_matriz():
+    usuario_gmail, senha_gmail = credenciais_login_email()
+
+    # Verifica se as credenciais do Gmail são válidas
+    if not verificar_credenciais(usuario_gmail, senha_gmail):
+        messagebox.showerror(
+            "Erro", "Credenciais inválidas. Verifique o e-mail e a senha."
+        )
+        close_process("saplogon.exe")
+        return
+    print("Sucesso: Credenciais válidas! Executando rotina...")
+
+    # Configurar informações de e-mail
+    email_remessa = usuario_gmail
+    senha = senha_gmail
+    arquivo_anexo = r"G:\Drives compartilhados\Fiscal_Arquivo_de_Notas\FISCAL_MATERIAL\CONTROLE GRC - MATERIAIS\Envios\Obras\1.xlsx"
+    nome_anexo = "Pendências NF-e Matriz"
+
+    # Lista de e-mails para adicionar em cópia (CC)
+    cc_emails = [
+        "andressa.fagundes@rogga.com.br",
+        "nicole.soligo@rogga.com.br",
+        "anderson.alexi@rogga.com.br",
+    ]
+
+    # Caminho do arquivo Excel com os e-mails
+    file_path = r"G:\Drives compartilhados\Fiscal_Arquivo_de_Notas\FISCAL_MATERIAL\CONTROLE GRC - MATERIAIS\Célula Fiscal GRC - Materiais.XLSX"
+    df = pd.read_excel(file_path, sheet_name="Dados")
+
+    # Filtrar e-mails cujo valor da coluna "Local" seja igual a 1
+    print(df[["E-mail", "Local"]].head(10))
+    df_emails = df[["E-mail", "Local"]].dropna(subset=["E-mail", "Local"])
+    df_emails["Local"] = (
+        pd.to_numeric(df_emails["Local"], errors="coerce").fillna(0).astype(int)
+    )
+    df_emails = df_emails[df_emails["Local"] == 1]
+
+    # Explodir os e-mails separados por vírgula
+    emails_exploded = df_emails["E-mail"].str.split(",").explode().str.strip()
+
+    # Filtrar duplicados e vazios
+    emails_list = emails_exploded.dropna().unique().tolist()
+
+    # Verifica se há e-mails para enviar
+    if not emails_list:
+        print("⚠️ Nenhum e-mail com Local = 1 encontrado. Rotina encerrada.")
+        return
+
+    # Construir o e-mail
+    msg = MIMEMultipart()
+    msg["Subject"] = "Pedidos de compra PENDENTES de Ajuste"
+    msg["From"] = email_remessa
+    msg["To"] = ", ".join(emails_list)
+    msg["CC"] = ", ".join(cc_emails)
+
+    corpo_email = """
+    <p>Prezados!</p>
+    <p>Estamos enviando em anexo a lista de notas fiscais de materiais que estão pendentes, identificadas pela equipe:</p>
+    <p><strong>Fiscal Materiais (GRC)</strong></p>
+    
+    <p>Essa é uma mensagem automática, favor não responder!</p>
+
+    <p><a href="https://drive.google.com/drive/folders/1EsjLOfnKe70qJMBdiH6mPPh8pMN60I8L?usp=drive_link">
+    Link para download das NFs</a></p>
+    
+    <p>Dúvidas, deverão entrar em contato diretamente com o fiscal material seguindo a divisão de obras.</p>
+    <p>e-mail: fiscal.material@rogga.com.br</p>
+    """
+    msg.attach(MIMEText(corpo_email, "html"))
+
+    # Anexar arquivo
+    if not os.path.isfile(arquivo_anexo):
+        print(f"❌ Erro: O arquivo '{arquivo_anexo}' não foi encontrado.")
+        return
+    else:
+        try:
+            with open(arquivo_anexo, "rb") as f:
+                parte_anexo = MIMEApplication(
+                    f.read(),
+                    _subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            parte_anexo.add_header(
+                "Content-Disposition", "attachment", filename=nome_anexo
+            )
+            msg.attach(parte_anexo)
+            print(f"📎 Arquivo anexado corretamente: {nome_anexo}")
+        except Exception as e:
+            print(f"❌ Erro ao anexar o arquivo: {e}")
+            return
+
+    # Enviar e-mail
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as servidor:
+            servidor.starttls()
+            servidor.login(email_remessa, senha)
+            servidor.sendmail(email_remessa, emails_list + cc_emails, msg.as_string())
+        print("✅ E-mail enviado com sucesso!")
+    except Exception as e:
+        print(f"❌ Falha ao enviar o e-mail: {e}")
 
 
 def email_suprimentos():
@@ -1564,13 +1667,11 @@ def email_obras():
     # Converter a coluna "Local" para inteiros (remover casas decimais)
     df_emails_obras["Local"] = df_emails_obras["Local"].astype(str).str.strip()
 
-
     # Lista de e-mails para adicionar em cópia (CC)
     cc_emails = [
         "andressa.fagundes@rogga.com.br",
         "nicole.soligo@rogga.com.br",
         "anderson.alexi@rogga.com.br",
-        "marcelo.laude@rogga.com.br",
     ]
 
     # Caminho da pasta onde os arquivos estão localizados
@@ -1586,7 +1687,8 @@ def email_obras():
         arquivos_encontrados = [
             arquivo.strip()
             for arquivo in arquivos_na_pasta
-            if arquivo.strip().startswith(nome_arquivo_base) and arquivo.lower().endswith(".xlsx")
+            if arquivo.strip().startswith(nome_arquivo_base)
+            and arquivo.lower().endswith(".xlsx")
         ]
 
         if arquivos_encontrados:
@@ -1778,15 +1880,53 @@ def copiar_e_congelar_arquivo():
     wb.close()
 
 
+# Chave única (em produção, gere só uma vez e salve fora do código)
+def gerar_chave():
+    chave = Fernet.generate_key()
+    with open("chave.key", "wb") as f:
+        f.write(chave)
+
+
+def carregar_chave():
+    if not os.path.exists("chave.key"):
+        gerar_chave()
+    with open("chave.key", "rb") as f:
+        return f.read()
+
+
+fernet = Fernet(carregar_chave())
+
+
+def salvar_credenciais(usuario_sap, senha_sap, usuario_gmail, senha_gmail):
+    dados = {
+        "usuario_sap": fernet.encrypt(usuario_sap.encode()).decode(),
+        "senha_sap": fernet.encrypt(senha_sap.encode()).decode(),
+        "usuario_gmail": fernet.encrypt(usuario_gmail.encode()).decode(),
+        "senha_gmail": fernet.encrypt(senha_gmail.encode()).decode(),
+    }
+    with open("credenciais.json", "w") as f:
+        json.dump(dados, f)
+
+
+def carregar_credenciais():
+    if not os.path.exists("credenciais.json"):
+        return None
+    with open("credenciais.json", "r") as f:
+        dados = json.load(f)
+    return {
+        "usuario_sap": fernet.decrypt(dados["usuario_sap"].encode()).decode(),
+        "senha_sap": fernet.decrypt(dados["senha_sap"].encode()).decode(),
+        "usuario_gmail": fernet.decrypt(dados["usuario_gmail"].encode()).decode(),
+        "senha_gmail": fernet.decrypt(dados["senha_gmail"].encode()).decode(),
+    }
+
+
 def rotina1():
     GRC_ETL()
     salvar_copia_celula_fiscal()
     compilar_historico()
     SAP_Extra()
     copiar_e_congelar_arquivo()
-    # time.sleep(20)
-    # nf_recebida()
-    
 
 
 def rotina2():
@@ -1794,6 +1934,7 @@ def rotina2():
 
 
 def rotina3():
+    email_matriz()
     email_obras()
     email_csc()
 
@@ -1811,29 +1952,24 @@ def abrir_senha():
 # Criando a janela principal
 root = tk.Tk()
 root.title("GRC")
-root.geometry("235x450")  # Ajuste para comportar melhor os widgets
+root.geometry("235x500")
 root.configure(bg="#f2f2f2")
-root.resizable(False, False)  # Impede o redimensionamento da janela
-
-# Fonte personalizada
+root.resizable(False, False)
 root.option_add("*Font", "Amiko 10")
 
-# Título centralizado com quebra de linha
 label_titulo = tk.Label(
     root,
     text="Rotinas GRC",
     font=("Amiko", 10, "bold"),
     bg="#f2f2f2",
     fg="#b23a48",
-    wraplength=240,  # Ajuste a largura conforme necessário
+    wraplength=240,
 )
 label_titulo.pack(pady=(10, 10))
 
-# Frame principal para centralizar os elementos
 frame = tk.Frame(root, bg="#f2f2f2")
 frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=5)
 
-# Configuração de estilo para os widgets
 input_style = {
     "font": ("Amiko", 10),
     "bg": "#ffffff",
@@ -1855,54 +1991,64 @@ button_style = {
     "cursor": "hand2",
 }
 
-# Criando rótulos e entradas
-tk.Label(frame, text="Usuário (SAP)", **label_style).grid(
-    row=0, column=0, sticky="w", pady=(2, 1)
-)
+# Campos SAP
+tk.Label(frame, text="Usuário (SAP)", **label_style).grid(row=0, column=0, sticky="w")
 entry_usuario_sap = tk.Entry(frame, **input_style, width=25)
 entry_usuario_sap.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
-tk.Label(frame, text="Senha (SAP)", **label_style).grid(
-    row=2, column=0, sticky="w", pady=(2, 1)
-)
+tk.Label(frame, text="Senha (SAP)", **label_style).grid(row=2, column=0, sticky="w")
 entry_senha_sap = tk.Entry(frame, **input_style, width=25, show="*")
-entry_senha_sap.grid(row=3, column=0, sticky="ew", pady=(0, 5))
+entry_senha_sap.grid(row=3, column=0, sticky="ew", pady=(0, 2))
 
-# Centralizar o botão
-button_executar = tk.Button(
-    frame, text="Atualização", command=rotina1, **button_style, width=25
+salvar_login_sap = tk.BooleanVar()
+tk.Checkbutton(
+    frame, text="Salvar login SAP", variable=salvar_login_sap, bg="#f2f2f2"
+).grid(row=4, column=0, sticky="w")
+
+# Botão Atualização (SAP)
+button_executar1 = tk.Button(
+    frame,
+    text="Atualização",
+    command=lambda: executar_rotina(rotina1),
+    **button_style,
+    width=25,
 )
-button_executar.grid(row=4, column=0, pady=(10, 10), sticky="ew")
+button_executar1.grid(row=5, column=0, pady=(10, 10), sticky="ew")
 
-
-tk.Label(frame, text="Usuário (Gmail)", **label_style).grid(
-    row=5, column=0, sticky="w", pady=(2, 1)
-)
+# Campos Gmail
+tk.Label(frame, text="Usuário (Gmail)", **label_style).grid(row=6, column=0, sticky="w")
 entry_usuario_gmail = tk.Entry(frame, **input_style, width=25)
-entry_usuario_gmail.grid(row=6, column=0, sticky="ew", pady=(0, 5))
+entry_usuario_gmail.grid(row=7, column=0, sticky="ew", pady=(0, 5))
 
-tk.Label(frame, text="Senha (Gmail)", **label_style).grid(
-    row=7, column=0, sticky="w", pady=(2, 1)
-)
+tk.Label(frame, text="Senha (Gmail)", **label_style).grid(row=8, column=0, sticky="w")
 entry_senha_gmail = tk.Entry(frame, **input_style, width=25, show="*")
-entry_senha_gmail.grid(row=8, column=0, sticky="ew", pady=(0, 10))
+entry_senha_gmail.grid(row=9, column=0, sticky="ew", pady=(0, 2))
 
+salvar_login_gmail = tk.BooleanVar()
+tk.Checkbutton(
+    frame, text="Salvar login Gmail", variable=salvar_login_gmail, bg="#f2f2f2"
+).grid(row=10, column=0, sticky="w")
 
-# Centralizar o botão
-button_executar = tk.Button(
-    frame, text="E-mail Suprimentos", command=rotina2, **button_style, width=25
+# Botões Gmail
+button_executar2 = tk.Button(
+    frame,
+    text="E-mail Suprimentos",
+    command=lambda: executar_rotina(rotina2),
+    **button_style,
+    width=25,
 )
-button_executar.grid(row=9, column=0, pady=(10, 10), sticky="ew")
+button_executar2.grid(row=11, column=0, pady=(10, 10), sticky="ew")
 
-
-
-# Centralizar o botão
-button_executar = tk.Button(
-    frame, text="E-mail Obras", command=rotina3, **button_style, width=25
+button_executar3 = tk.Button(
+    frame,
+    text="E-mail Obras",
+    command=lambda: executar_rotina(rotina3),
+    **button_style,
+    width=25,
 )
-button_executar.grid(row=10, column=0, pady=(10, 10), sticky="ew")
+button_executar3.grid(row=12, column=0, pady=(10, 10), sticky="ew")
 
-# Rótulo para abrir o link da senha
+# Links úteis
 label_link_senha = tk.Label(
     frame,
     text="Senha para acesso Gmail",
@@ -1911,10 +2057,9 @@ label_link_senha = tk.Label(
     bg="#f2f2f2",
     font=("Amiko", 10, "underline"),
 )
-label_link_senha.grid(row=11, column=0, pady=(0, 10), sticky="ew")
+label_link_senha.grid(row=13, column=0, pady=(0, 10), sticky="ew")
 label_link_senha.bind("<Button-1>", lambda e: abrir_senha())
 
-# Rótulo para abrir o link da planilha
 label_link = tk.Label(
     frame,
     text="Célula Fiscal GRC",
@@ -1923,11 +2068,11 @@ label_link = tk.Label(
     bg="#f2f2f2",
     font=("Amiko", 10, "underline"),
 )
-label_link.grid(row=12, column=0, pady=(0, 20), sticky="ew")
+label_link.grid(row=14, column=0, pady=(0, 20), sticky="ew")
 label_link.bind("<Button-1>", lambda e: abrir_link())
 
 
-# Configurar o comportamento de hover para os botões
+# Hover nos botões
 def on_enter(e):
     e.widget["bg"] = "#8c2e39"
 
@@ -1936,11 +2081,32 @@ def on_leave(e):
     e.widget["bg"] = "#b23a48"
 
 
-button_executar.bind("<Enter>", on_enter)
-button_executar.bind("<Leave>", on_leave)
+for btn in [button_executar1, button_executar2, button_executar3]:
+    btn.bind("<Enter>", on_enter)
+    btn.bind("<Leave>", on_leave)
+
+# Carregar credenciais
+credenciais = carregar_credenciais()
+if credenciais:
+    entry_usuario_sap.insert(0, credenciais["usuario_sap"])
+    entry_senha_sap.insert(0, credenciais["senha_sap"])
+    entry_usuario_gmail.insert(0, credenciais["usuario_gmail"])
+    entry_senha_gmail.insert(0, credenciais["senha_gmail"])
+    salvar_login_sap.set(True)
+    salvar_login_gmail.set(True)
+
+
+# Função que executa as rotinas e salva login se necessário
+def executar_rotina(rotina_func):
+    if salvar_login_sap.get() or salvar_login_gmail.get():
+        salvar_credenciais(
+            entry_usuario_sap.get(),
+            entry_senha_sap.get(),
+            entry_usuario_gmail.get(),
+            entry_senha_gmail.get(),
+        )
+    rotina_func()
 
 
 # Inicializa a interface
 root.mainloop()
-
-# %%
