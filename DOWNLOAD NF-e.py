@@ -11,7 +11,7 @@ import shutil
 
 def fazer_login():
     try: 
-        caminho_executavel_sap = r'C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe'
+        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
     except:
         caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
     
