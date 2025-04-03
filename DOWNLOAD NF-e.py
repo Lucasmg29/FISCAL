@@ -13,7 +13,7 @@ def fazer_login():
     try: 
         caminho_executavel_sap = r'C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe'
     except:
-        caminho_executavel_sap = r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\SAP Front End\SAP Logon.lnk'
+        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
     
     # Verifique o caminho absoluto
     print(f"Caminho do executável: {caminho_executavel_sap}")
