@@ -114,7 +114,7 @@ def executar_rotina():
     session.findById("wnd[0]/usr/ctxtS_BUPLA-HIGH").text = local
     session.findById("wnd[0]/usr/ctxtS_BUDAT-LOW").text = data0
     session.findById("wnd[0]/usr/ctxtS_BUDAT-HIGH").text = data1
-    session.findById("wnd[0]/usr/ctxtP_VARIA").text = "/RELFISCAL"
+    session.findById("wnd[0]/usr/ctxtP_VARIA").text = "/ISSJOI"
     session.findById("wnd[0]/usr/ctxtS_BUDAT-HIGH").setFocus
     session.findById("wnd[0]/usr/ctxtS_BUDAT-HIGH").caretPosition = 6
     session.findById("wnd[0]").sendVKey(8)
@@ -136,26 +136,33 @@ def executar_rotina():
             if current_cell_column is None:
                 # Se não houver mais linhas, encerra o loop
                 has_more_rows = False
-                continue
-    
-            # Executa as ações necessárias para a linha atual
-            session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").clickCurrentCell()
+                continue  
     
             try:
+                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").currentCellColumn = "DOCNUM"
+                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").clickCurrentCell()
                 session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
                 session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
+                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
                 session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
                 session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
+                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").contextMenu()
                 session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
-                session.findById("wnd[1]/usr/ctxtDY_PATH").text = pastat
-                session.findById("wnd[1]/tbar[0]/btn[0]").press()
                 session.findById("wnd[1]").sendVKey(11)
-                session.findById("wnd[1]/tbar[0]/btn[0]").press()
+                session.findById("wnd[1]").sendVKey(0)
                 session.findById("wnd[0]").sendVKey(3)
+         
                 row_index += 1
             except:
+                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").currentCellColumn = "BELNR"
+                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").clickCurrentCell()
+                session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
+                session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
+                session.findById("wnd[1]/tbar[0]/btn[0]").press()
+                session.findById("wnd[1]").sendVKey(11)
+                session.findById("wnd[1]").sendVKey(0)
                 session.findById("wnd[0]").sendVKey(3)
+
                 row_index += 1
     
         except Exception as e:   
@@ -187,10 +194,6 @@ def executar_rotina():
         shutil.move(caminho_arquivo_origem, caminho_arquivo_destino)
  
     messagebox.showinfo("Execução", "Rotina executada com sucesso!")
-
-
-
-# In[5]:
 
 
 # Criando a janela principal
