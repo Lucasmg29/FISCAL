@@ -137,9 +137,9 @@ def executar_rotina():
                     grid.clickCurrentCell()
                     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
                     session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
-                    
-                    # Tenta abrir anexo
-                    session.findById("wnd[1]/tbar[0]/btn[0]").press()
+                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
+                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").contextMenu()
+                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
                     session.findById("wnd[1]").sendVKey(11)
                     session.findById("wnd[1]").sendVKey(0)
                     session.findById("wnd[0]").sendVKey(3)
