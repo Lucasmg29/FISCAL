@@ -121,27 +121,46 @@ def executar_rotina():
 
 
     row_index = 0
-    has_more_rows = True
     
-    # Tenta descobrir o número total de linhas do grid para evitar erro no final
+    # Tenta descobrir o número total de linhas do grid
     try:
         total_rows = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").rowCount
     except Exception as e:
         print(f"Erro ao tentar obter número total de linhas: {e}")
         total_rows = 0
-        has_more_rows = False
     
     while row_index < total_rows:
+        print(f"\n🔄 Processando linha {row_index}...")
+    
         try:
-            print(f"\n🔄 Processando linha {row_index}...")
             grid = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell")
             grid.selectedRows = str(row_index)
             grid.currentCellRow = row_index
     
-            for column in ["DOCNUM", "BELNR"]:
+            try:
+                print(f"➡️ Tentando com coluna 'DOCNUM'")
+                grid.currentCellColumn = "DOCNUM"
+                grid.clickCurrentCell()
+    
+                # Executa bloco completo
+                session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
+                session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
+                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
+                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
+                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
+                session.findById("wnd[1]").sendVKey(11)
+                session.findById("wnd[1]").sendVKey(0)
+                session.findById("wnd[1]").sendVKey(12)
+                session.findById("wnd[0]").sendVKey(3)
+    
+                print(f"✅ Sucesso com 'DOCNUM' na linha {row_index}")
+    
+            except Exception as e_doc:
+                print(f"❌ Falha com 'DOCNUM': {e_doc}")
                 try:
-                    print(f"➡️  Tentando coluna '{column}' na linha {row_index}...")
-                    grid.currentCellColumn = column
+                    # Tenta com BELNR
+                    print(f"➡️ Tentando com coluna 'BELNR'")
+                    grid.currentCellColumn = "BELNR"
                     grid.clickCurrentCell()
     
                     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
@@ -151,14 +170,14 @@ def executar_rotina():
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
                     session.findById("wnd[1]").sendVKey(11)
                     session.findById("wnd[1]").sendVKey(0)
-                    session.findById("wnd[1]").sendVKey(12)  # Fecha janela de download
-                    session.findById("wnd[0]").sendVKey(3)    # Fecha GOS
+                    session.findById("wnd[1]").sendVKey(12)
+                    session.findById("wnd[0]").sendVKey(3)
     
-                    print(f"✅ Sucesso com coluna '{column}' na linha {row_index}")
-                    break  # Sucesso, não tenta a outra coluna
+                    print(f"✅ Sucesso com 'BELNR' na linha {row_index}")
     
-                except Exception as e_inner:
-                    print(f"❌ Falha com coluna '{column}' na linha {row_index}: {e_inner}")
+                except Exception as e_belnr:
+                    print(f"❌ Falha com 'BELNR': {e_belnr}")
+                    # Tenta fechar janelas se houver
                     try:
                         session.findById("wnd[1]").sendVKey(3)
                     except:
@@ -167,14 +186,14 @@ def executar_rotina():
                         session.findById("wnd[0]").sendVKey(3)
                     except:
                         pass
-                    continue  # Tenta a próxima coluna
     
             row_index += 1
     
         except Exception as e:
             print(f"\n🚨 Erro inesperado na linha {row_index}: {e}")
-            has_more_rows = False
             close_process("saplogon.exe")
+            break
+
 
     # Defina os caminhos das pastas
     origem = pastat
