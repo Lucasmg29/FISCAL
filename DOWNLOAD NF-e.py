@@ -122,19 +122,18 @@ def executar_rotina():
 
     row_index = 0
     has_more_rows = True
-
+    
     while has_more_rows:
         try:
             grid = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell")
             grid.selectedRows = str(row_index)
             grid.currentCellRow = row_index
-
-            success = False  # Flag para saber se algum dos dois funcionou
-
+    
             for column in ["DOCNUM", "BELNR"]:
                 try:
                     grid.currentCellColumn = column
                     grid.clickCurrentCell()
+    
                     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
                     session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
@@ -142,14 +141,13 @@ def executar_rotina():
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
                     session.findById("wnd[1]").sendVKey(11)
                     session.findById("wnd[1]").sendVKey(0)
-                    session.findById("wnd[1]").sendVKey(12)
-                    session.findById("wnd[0]").sendVKey(3)
-
-                    success = True
-                    break  # Se funcionou, não tenta o próximo
-
-                except Exception as e:
-                    # Fecha janelas abertas caso tenha falhado
+                    session.findById("wnd[1]").sendVKey(12)  # Fecha janela de download
+                    session.findById("wnd[0]").sendVKey(3)    # Fecha GOS
+    
+                    break  # Se deu certo, não tenta o próximo column
+    
+                except Exception:
+                    # Tenta fechar janelas abertas se falhou
                     try:
                         session.findById("wnd[1]").sendVKey(3)
                     except:
@@ -158,14 +156,14 @@ def executar_rotina():
                         session.findById("wnd[0]").sendVKey(3)
                     except:
                         pass
-
-            # Vai pra próxima linha de qualquer forma
+    
             row_index += 1
-
+    
         except Exception as e:
             print(f"Erro ao processar a linha {row_index}: {e}")
             has_more_rows = False
             close_process("saplogon.exe")
+
 
     # Defina os caminhos das pastas
     origem = pastat
