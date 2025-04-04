@@ -120,52 +120,48 @@ def executar_rotina():
     session.findById("wnd[0]").sendVKey(8)
 
 
-    # Inicializa o contador de linhas
     row_index = 0
-    
-    # Inicializa a variável de controle para continuar o loop
     has_more_rows = True
-    
+
     while has_more_rows:
         try:
-            # Atualiza a linha selecionada
-            session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").selectedRows = str(row_index)
-            session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").currentCellRow = row_index
-            # Verifica se a linha selecionada é válida
-            current_cell_column = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").currentCellColumn = "DOCNUM"
-            if current_cell_column is None:
-                # Se não houver mais linhas, encerra o loop
-                has_more_rows = False
-                continue  
-    
-            try:
-                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").currentCellColumn = "DOCNUM"
-                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").clickCurrentCell()
-                session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
-                session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").contextMenu()
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
-                session.findById("wnd[1]").sendVKey(11)
-                session.findById("wnd[1]").sendVKey(0)
-                session.findById("wnd[0]").sendVKey(3)
-         
-                row_index += 1
-            except:
-                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").currentCellColumn = "BELNR"
-                session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").clickCurrentCell()
-                session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
-                session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
-                session.findById("wnd[1]/tbar[0]/btn[0]").press()
-                session.findById("wnd[1]").sendVKey(11)
-                session.findById("wnd[1]").sendVKey(0)
-                session.findById("wnd[0]").sendVKey(3)
+            grid = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell")
+            grid.selectedRows = str(row_index)
+            grid.currentCellRow = row_index
 
-                row_index += 1
-    
-        except Exception as e:   
+            success = False  # Flag para saber se algum dos dois funcionou
+
+            for column in ["DOCNUM", "BELNR"]:
+                try:
+                    grid.currentCellColumn = column
+                    grid.clickCurrentCell()
+                    session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
+                    session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
+                    
+                    # Tenta abrir anexo
+                    session.findById("wnd[1]/tbar[0]/btn[0]").press()
+                    session.findById("wnd[1]").sendVKey(11)
+                    session.findById("wnd[1]").sendVKey(0)
+                    session.findById("wnd[0]").sendVKey(3)
+
+                    success = True
+                    break  # Se funcionou, não tenta o próximo
+
+                except Exception as e:
+                    # Fecha janelas abertas caso tenha falhado
+                    try:
+                        session.findById("wnd[1]").sendVKey(3)
+                    except:
+                        pass
+                    try:
+                        session.findById("wnd[0]").sendVKey(3)
+                    except:
+                        pass
+
+            # Vai pra próxima linha de qualquer forma
+            row_index += 1
+
+        except Exception as e:
             print(f"Erro ao processar a linha {row_index}: {e}")
             has_more_rows = False
             close_process("saplogon.exe")
