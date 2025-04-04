@@ -123,14 +123,24 @@ def executar_rotina():
     row_index = 0
     has_more_rows = True
     
-    while has_more_rows:
+    # Tenta descobrir o número total de linhas do grid para evitar erro no final
+    try:
+        total_rows = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").rowCount
+    except Exception as e:
+        print(f"Erro ao tentar obter número total de linhas: {e}")
+        total_rows = 0
+        has_more_rows = False
+    
+    while row_index < total_rows:
         try:
+            print(f"\n🔄 Processando linha {row_index}...")
             grid = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell")
             grid.selectedRows = str(row_index)
             grid.currentCellRow = row_index
     
             for column in ["DOCNUM", "BELNR"]:
                 try:
+                    print(f"➡️  Tentando coluna '{column}' na linha {row_index}...")
                     grid.currentCellColumn = column
                     grid.clickCurrentCell()
     
@@ -144,10 +154,11 @@ def executar_rotina():
                     session.findById("wnd[1]").sendVKey(12)  # Fecha janela de download
                     session.findById("wnd[0]").sendVKey(3)    # Fecha GOS
     
-                    break  # Se deu certo, não tenta o próximo column
+                    print(f"✅ Sucesso com coluna '{column}' na linha {row_index}")
+                    break  # Sucesso, não tenta a outra coluna
     
-                except Exception:
-                    # Tenta fechar janelas abertas se falhou
+                except Exception as e_inner:
+                    print(f"❌ Falha com coluna '{column}' na linha {row_index}: {e_inner}")
                     try:
                         session.findById("wnd[1]").sendVKey(3)
                     except:
@@ -156,14 +167,14 @@ def executar_rotina():
                         session.findById("wnd[0]").sendVKey(3)
                     except:
                         pass
+                    continue  # Tenta a próxima coluna
     
             row_index += 1
     
         except Exception as e:
-            print(f"Erro ao processar a linha {row_index}: {e}")
+            print(f"\n🚨 Erro inesperado na linha {row_index}: {e}")
             has_more_rows = False
             close_process("saplogon.exe")
-
 
     # Defina os caminhos das pastas
     origem = pastat
