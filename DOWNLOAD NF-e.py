@@ -139,11 +139,9 @@ def executar_rotina():
                     session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
-                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").contextMenu()
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
                     session.findById("wnd[1]").sendVKey(11)
-                    session.findById("wnd[1]").sendVKey(0)
+                    session.findById("wnd[1]").sendVKey(12)
                     session.findById("wnd[0]").sendVKey(3)
 
                     success = True
