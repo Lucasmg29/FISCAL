@@ -145,6 +145,16 @@ def executar_rotina():
                 # Executa bloco completo
                 session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
                 session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
+
+                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("&MB_FILTER")
+                session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
+                session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
+                session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
+                session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
+                session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
+                session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
+                session.findById("wnd[3]").sendVKey(0)
+
                 session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
                 session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
                 session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
@@ -170,11 +180,10 @@ def executar_rotina():
                     session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
                     session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
                     session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
-                    session.findById("wnd[3]").sendVKey(4)
-                    session.findById("wnd[4]/usr/lbl[1,4]").setFocus
-                    session.findById("wnd[4]/usr/lbl[1,4]").caretPosition = 0
-                    session.findById("wnd[4]").sendVKey(2)
-                    session.findById("wnd[3]/tbar[0]/btn[0]").press()
+                    session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
+                    session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
+                    session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
+                    session.findById("wnd[3]").sendVKey(0)
 
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
