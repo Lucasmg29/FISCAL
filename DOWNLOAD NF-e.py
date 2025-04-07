@@ -18,17 +18,20 @@ sap_gui_path = os.path.join(user_dir, "Documents", "SAP", "SAP GUI")
 
 
 def fazer_login():
-    try: 
-        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
-    except:
-        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
-    
-    # Verifique o caminho absoluto
+    close_process("saplogon.exe")
+    caminho_executavel_sap = r"C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe"
+    if not os.path.exists(caminho_executavel_sap):
+        caminho_executavel_sap = (
+            r"C:\Program Files (x86)\SAP\FrontEnd\SAPgui\saplogon.exe"
+        )
+
     print(f"Caminho do executável: {caminho_executavel_sap}")
 
     if not os.path.exists(caminho_executavel_sap):
         print("O arquivo não foi encontrado. Verifique o caminho.")
-        messagebox.showerror("Erro", "O executável do SAP GUI não foi encontrado. Verifique o caminho.")
+        messagebox.showerror(
+            "Erro", "O executável do SAP GUI não foi encontrado. Verifique o caminho."
+        )
         return
 
     # Use shlex.split para tratar corretamente o caminho com espaços
@@ -44,9 +47,9 @@ def fazer_login():
 
     time.sleep(3)
 
-    usuario = entry_usuario.get()
-    senha = entry_senha.get()
-    
+    usuario_sap = entry_usuario.get()
+    senha_sap = entry_senha.get()
+
     try:
         subprocess.Popen(comando)
     except Exception as e:
@@ -58,22 +61,33 @@ def fazer_login():
     try:
         connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
     except Exception as e:
-        print(f"Conexão 'PVR - Produção (Externo)' não encontrada. Tentando 'PVR - Produção (Interno)'...")
+        print(
+            f"Conexão 'PVR - Produção (Externo)' não encontrada. Tentando 'PVR - Produção (Interno)'..."
+        )
         try:
-            connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
+            connection = application.OpenConnection("PVR - Produção SAP ECC", True)
         except Exception as e:
             print(f"Ocorreu um erro ao abrir a conexão: {e}")
 
     session = connection.Children(0)
 
     try:
-        # Preencha as informações de cliente, usuário e senha
+        # Preencher as informações de cliente, usuário e senha
         session.findById("wnd[0]/usr/txtRSYST-MANDT").text = "300"
-        session.findById("wnd[0]/usr/txtRSYST-BNAME").text = usuario
-        session.findById("wnd[0]/usr/pwdRSYST-BCODE").text = senha
+        session.findById("wnd[0]/usr/txtRSYST-BNAME").text = usuario_sap
+        session.findById("wnd[0]/usr/pwdRSYST-BCODE").text = senha_sap
+        session.findById("wnd[0]/usr/txtRSYST-LANGU").text = "PT"
         session.findById("wnd[0]").sendVKey(0)
-    except Exception as e:
-        print(f"Ocorreu um erro durante a autenticação no SAP: {e}")
+
+    except:
+        messagebox.showerror("Erro", f"Usuário ou senha incorretos")
+        close_process("saplogon.exe")
+        return
+
+
+
+# In[3]:
+
 
 # FUNÇÃO ENCERRAR O SAP
 def close_process(nome_processo):
@@ -124,8 +138,7 @@ def executar_rotina():
     data0 = entry_data0.get()
     data1 = entry_data1.get()
     pastad  = entry_pastad.get()
-
-
+    
     # Fazer login no SAP
     fazer_login()
 
@@ -147,6 +160,7 @@ def executar_rotina():
     session.findById("wnd[0]/usr/ctxtS_BUDAT-HIGH").caretPosition = 6
     session.findById("wnd[0]").sendVKey(8)
 
+
     def realizar_exportacao(session, sap_gui_path):
         session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
         session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
@@ -165,13 +179,12 @@ def executar_rotina():
         session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
         session.findById("wnd[1]/usr/ctxtDY_PATH").text = sap_gui_path
         session.findById("wnd[1]").sendVKey(11)
-        session.findById("wnd[1]").sendVKey(0)
+  
+        session.findById("wnd[1]").sendVKey(12)
+        session.findById("wnd[0]").sendVKey(3)
 
-        try:
-            session.findById("wnd[1]").sendVKey(12)
-            session.findById("wnd[0]").sendVKey(3)
-        except:
-            session.findById("wnd[0]").sendVKey(3)
+
+
 
     row_index = 0
     
@@ -192,47 +205,46 @@ def executar_rotina():
 
             tentativa_sucesso = False
 
-            # Tenta com DOCNUM
+            # Tentativa com DOCNUM
             try:
                 print("➡️ Tentando com 'DOCNUM'")
                 grid.currentCellColumn = "DOCNUM"
                 grid.clickCurrentCell()
                 realizar_exportacao(session, sap_gui_path)
-                processar_arquivos(sap_gui_path, pastad)
-                print(f"✅ Sucesso com 'DOCNUM' na linha {row_index}")
                 tentativa_sucesso = True
-
             except Exception as e_doc:
                 print(f"❌ Falha com 'DOCNUM': {e_doc}")
 
-                # Tenta com BELNR
+            if tentativa_sucesso:
                 try:
-                    print("➡️ Tentando com 'BELNR'")
-                    grid.currentCellColumn = "BELNR"
-                    grid.clickCurrentCell()
-                    realizar_exportacao(session, sap_gui_path)
                     processar_arquivos(sap_gui_path, pastad)
-                    print(f"✅ Sucesso com 'BELNR' na linha {row_index}")
-                    tentativa_sucesso = True
+                    print(f"✅ Sucesso com 'DOCNUM' na linha {row_index}")
+                except Exception as e_proc:
+                    print(f"⚠️ Sucesso parcial com 'DOCNUM', mas falhou no pós-processamento: {e_proc}")
+                row_index += 1
+                continue  # pula pra próxima linha
 
-                except Exception as e_belnr:
-                    print(f"❌ Falha com 'BELNR': {e_belnr}")
-                    # Fecha qualquer janela que possa ter ficado aberta
-                    try: session.findById("wnd[1]").sendVKey(3)
-                    except: pass
-                    try: session.findById("wnd[0]").sendVKey(3)
-                    except: pass
+            # Se falhou com DOCNUM, tenta com BELNR
+            try:
+                print("➡️ Tentando com 'BELNR'")
+                grid.currentCellColumn = "BELNR"
+                grid.clickCurrentCell()
+                realizar_exportacao(session, sap_gui_path)
+                processar_arquivos(sap_gui_path, pastad)
+                print(f"✅ Sucesso com 'BELNR' na linha {row_index}")
+            except Exception as e_belnr:
+                print(f"❌ Falha com 'BELNR': {e_belnr}")
+                try: session.findById("wnd[1]").sendVKey(3)
+                except: pass
+                try: session.findById("wnd[0]").sendVKey(3)
+                except: pass
 
-            row_index += 1 if tentativa_sucesso or not tentativa_sucesso else 0  # só incrementa uma vez
+            row_index += 1
 
         except Exception as e:
-            print(f"🚨 Sem Documentos anexados {row_index}: {e}")
-            
+            print(f"\n🚨 Erro inesperado na linha {row_index}: {e}")
 
-
- 
-    messagebox.showinfo("Execução", "Rotina executada com sucesso!")
-    close_process("saplogon.exe")
+    close_process("saplogon.exe")   
 
 
 # Criando a janela principal
