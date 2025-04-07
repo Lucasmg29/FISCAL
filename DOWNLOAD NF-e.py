@@ -9,11 +9,19 @@ import psutil
 import shutil
 
 
+# Obter o diretório do usuário atual
+user_dir = os.path.expanduser("~")
+
+# Criar o caminho dinâmico para a pasta SAP\SAP GUI
+sap_gui_path = os.path.join(user_dir, "Documents", "SAP", "SAP GUI")
+
+
+
 def fazer_login():
     try: 
-        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
+        caminho_executavel_sap = r'C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe'
     except:
-        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
+        caminho_executavel_sap = r'C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe'
     
     # Verifique o caminho absoluto
     print(f"Caminho do executável: {caminho_executavel_sap}")
@@ -48,11 +56,11 @@ def fazer_login():
     sapguiauto = win32com.client.GetObject("SAPGUI")
     application = sapguiauto.GetScriptingEngine
     try:
-        connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
+        connection = application.OpenConnection("NOVO QVR - Qualidade SAP ECC", True)
     except Exception as e:
         print(f"Conexão 'PVR - Produção (Externo)' não encontrada. Tentando 'PVR - Produção (Interno)'...")
         try:
-            connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
+            connection = application.OpenConnection("NOVO QVR - Qualidade SAP ECC", True)
         except Exception as e:
             print(f"Ocorreu um erro ao abrir a conexão: {e}")
 
@@ -67,10 +75,6 @@ def fazer_login():
     except Exception as e:
         print(f"Ocorreu um erro durante a autenticação no SAP: {e}")
 
-
-# In[3]:
-
-
 # FUNÇÃO ENCERRAR O SAP
 def close_process(nome_processo):
     for proc in psutil.process_iter(['pid', 'name']):
@@ -84,8 +88,32 @@ def close_process(nome_processo):
             except psutil.AccessDenied:
                 print(f'Erro: Acesso negado para fechar {proc.info["name"]}.')
 
+def processar_arquivos(pasta_origem, pasta_destino):
+    # Verifica se as pastas existem
+    if not os.path.exists(pasta_origem):
+        print(f"A pasta de origem '{pasta_origem}' não foi encontrada.")
+        return
 
-# In[4]:
+    if not os.path.exists(pasta_destino):
+        os.makedirs(pasta_destino)
+        print(f"A pasta de destino '{pasta_destino}' não existia, então foi criada.")
+
+    # Itera sobre os arquivos na pasta de origem
+    for arquivo in os.listdir(pasta_origem):
+        caminho_arquivo_origem = os.path.join(pasta_origem, arquivo)
+
+        # Verifica se é um arquivo
+        if os.path.isfile(caminho_arquivo_origem):
+            caminho_arquivo_destino = os.path.join(pasta_destino, arquivo)
+
+            # Se o arquivo já existir no destino, remove o arquivo antigo
+            if os.path.exists(caminho_arquivo_destino):
+                os.remove(caminho_arquivo_destino)
+                print(f"Arquivo {arquivo} existente no destino removido.")
+
+            # Move o arquivo para a pasta de destino
+            shutil.move(caminho_arquivo_origem, caminho_arquivo_destino)
+            print(f"Arquivo {arquivo} movido para {pasta_destino}")
 
 
 def executar_rotina():
@@ -95,9 +123,9 @@ def executar_rotina():
     local  = entry_local.get()
     data0 = entry_data0.get()
     data1 = entry_data1.get()
-    pastat  = entry_pastat.get()
     pastad  = entry_pastad.get()
-    
+
+
     # Fazer login no SAP
     fazer_login()
 
@@ -119,6 +147,31 @@ def executar_rotina():
     session.findById("wnd[0]/usr/ctxtS_BUDAT-HIGH").caretPosition = 6
     session.findById("wnd[0]").sendVKey(8)
 
+    def realizar_exportacao(session, sap_gui_path):
+        session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
+        session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
+
+        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("&MB_FILTER")
+        session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
+        session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
+        session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
+        session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
+        session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
+        session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
+        session.findById("wnd[3]").sendVKey(0)
+
+        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
+        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
+        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
+        session.findById("wnd[1]/usr/ctxtDY_PATH").text = sap_gui_path
+        session.findById("wnd[1]").sendVKey(11)
+        session.findById("wnd[1]").sendVKey(0)
+
+        try:
+            session.findById("wnd[1]").sendVKey(12)
+            session.findById("wnd[0]").sendVKey(3)
+        except:
+            session.findById("wnd[0]").sendVKey(3)
 
     row_index = 0
     
@@ -131,114 +184,55 @@ def executar_rotina():
     
     while row_index < total_rows:
         print(f"\n🔄 Processando linha {row_index}...")
-    
+
         try:
             grid = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell")
             grid.selectedRows = str(row_index)
             grid.currentCellRow = row_index
-    
+
+            tentativa_sucesso = False
+
+            # Tenta com DOCNUM
             try:
-                print(f"➡️ Tentando com coluna 'DOCNUM'")
+                print("➡️ Tentando com 'DOCNUM'")
                 grid.currentCellColumn = "DOCNUM"
                 grid.clickCurrentCell()
-    
-                # Executa bloco completo
-                session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
-                session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
-
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("&MB_FILTER")
-                session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
-                session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
-                session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
-                session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
-                session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
-                session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
-                session.findById("wnd[3]").sendVKey(0)
-
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
-                session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
-                session.findById("wnd[1]").sendVKey(11)
-                session.findById("wnd[1]").sendVKey(0)
-                session.findById("wnd[1]").sendVKey(12)
-                session.findById("wnd[0]").sendVKey(3)
-    
+                realizar_exportacao(session, sap_gui_path)
+                processar_arquivos(sap_gui_path, pastad)
                 print(f"✅ Sucesso com 'DOCNUM' na linha {row_index}")
-    
+                tentativa_sucesso = True
+
             except Exception as e_doc:
                 print(f"❌ Falha com 'DOCNUM': {e_doc}")
+
+                # Tenta com BELNR
                 try:
-                    # Tenta com BELNR
-                    print(f"➡️ Tentando com coluna 'BELNR'")
+                    print("➡️ Tentando com 'BELNR'")
                     grid.currentCellColumn = "BELNR"
                     grid.clickCurrentCell()
-    
-                    session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
-                    session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
-
-                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("&MB_FILTER")
-                    session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
-                    session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
-                    session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
-                    session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
-                    session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
-                    session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
-                    session.findById("wnd[3]").sendVKey(0)
-
-                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
-                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
-                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
-                    session.findById("wnd[1]").sendVKey(11)
-                    session.findById("wnd[1]").sendVKey(0)
-                    session.findById("wnd[1]").sendVKey(12)
-                    session.findById("wnd[0]").sendVKey(3)
-    
+                    realizar_exportacao(session, sap_gui_path)
+                    processar_arquivos(sap_gui_path, pastad)
                     print(f"✅ Sucesso com 'BELNR' na linha {row_index}")
-    
+                    tentativa_sucesso = True
+
                 except Exception as e_belnr:
                     print(f"❌ Falha com 'BELNR': {e_belnr}")
-                    # Tenta fechar janelas se houver
-                    try:
-                        session.findById("wnd[1]").sendVKey(3)
-                    except:
-                        pass
-                    try:
-                        session.findById("wnd[0]").sendVKey(3)
-                    except:
-                        pass
-    
-            row_index += 1
-    
+                    # Fecha qualquer janela que possa ter ficado aberta
+                    try: session.findById("wnd[1]").sendVKey(3)
+                    except: pass
+                    try: session.findById("wnd[0]").sendVKey(3)
+                    except: pass
+
+            row_index += 1 if tentativa_sucesso or not tentativa_sucesso else 0  # só incrementa uma vez
+
         except Exception as e:
-            print(f"\n🚨 Erro inesperado na linha {row_index}: {e}")
-            close_process("saplogon.exe")
-            break
+            print(f"🚨 Sem Documentos anexados {row_index}: {e}")
+            
 
 
-    # Defina os caminhos das pastas
-    origem = pastat
-    destino = pastad
-    
-    # Verifique se a pasta de destino existe, caso contrário, crie-a
-    if not os.path.exists(destino):
-        os.makedirs(destino)
-    
-    # Liste todos os arquivos na pasta de origem
-    arquivos = os.listdir(origem)
-    
-    # Mova os arquivos para a pasta de destino
-    for arquivo in arquivos:
-        caminho_arquivo_origem = os.path.join(origem, arquivo)
-        caminho_arquivo_destino = os.path.join(destino, arquivo)
-        
-        # Verifique se o arquivo já existe na pasta de destino e exclua-o se necessário
-        if os.path.exists(caminho_arquivo_destino):
-            os.remove(caminho_arquivo_destino)
-        
-        # Mova o arquivo
-        shutil.move(caminho_arquivo_origem, caminho_arquivo_destino)
  
     messagebox.showinfo("Execução", "Rotina executada com sucesso!")
+    close_process("saplogon.exe")
 
 
 # Criando a janela principal
@@ -288,10 +282,6 @@ entry_data0.grid(row=3, column=1, sticky='ew', pady=(2, 8), padx=2)
 tk.Label(frame, text="Data Final", **label_style).grid(row=2, column=2, sticky='w', pady=(2, 2))
 entry_data1 = tk.Entry(frame, **input_style, width=8)
 entry_data1.grid(row=3, column=2, sticky='ew', pady=(2, 8), padx=2)
-
-tk.Label(frame, text="Caminho da Pasta (Temporária)", **label_style).grid(row=4, column=0, columnspan=3, sticky='w', pady=(2, 2))
-entry_pastat = tk.Entry(frame, **input_style)
-entry_pastat.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(2, 8), padx=2)
 
 tk.Label(frame, text="Caminho da Pasta (Destino)", **label_style).grid(row=6, column=0, columnspan=3, sticky='w', pady=(2, 2))
 entry_pastad = tk.Entry(frame, **input_style)
