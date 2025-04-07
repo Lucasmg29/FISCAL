@@ -84,11 +84,6 @@ def fazer_login():
         close_process("saplogon.exe")
         return
 
-
-
-# In[3]:
-
-
 # FUNÇÃO ENCERRAR O SAP
 def close_process(nome_processo):
     for proc in psutil.process_iter(['pid', 'name']):
@@ -138,7 +133,8 @@ def executar_rotina():
     data0 = entry_data0.get()
     data1 = entry_data1.get()
     pastad  = entry_pastad.get()
-    
+
+
     # Fazer login no SAP
     fazer_login()
 
@@ -160,29 +156,51 @@ def executar_rotina():
     session.findById("wnd[0]/usr/ctxtS_BUDAT-HIGH").caretPosition = 6
     session.findById("wnd[0]").sendVKey(8)
 
-
     def realizar_exportacao(session, sap_gui_path):
         session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
         session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
 
+        
         session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("&MB_FILTER")
-        session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
-        session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
-        session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
-        session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
-        session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
-        session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
-        session.findById("wnd[3]").sendVKey(0)
 
-        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
-        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
-        session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
-        session.findById("wnd[1]/usr/ctxtDY_PATH").text = sap_gui_path
-        session.findById("wnd[1]").sendVKey(11)
-  
-        session.findById("wnd[1]").sendVKey(12)
-        session.findById("wnd[0]").sendVKey(3)
 
+        try:
+            session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
+            session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
+            session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
+            session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "@IT\QADOBE ACROBAT READER@"
+            session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-HIGH").text = ""
+            session.findById("wnd[3]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").caretPosition = 26
+            session.findById("wnd[3]").sendVKey(0)
+            session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
+            session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
+            session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
+            session.findById("wnd[1]/usr/ctxtDY_PATH").text = sap_gui_path
+            session.findById("wnd[1]").sendVKey(11)
+
+            session.findById("wnd[1]").sendVKey(12)
+            session.findById("wnd[0]").sendVKey(3)
+        except:
+            session.findById("wnd[1]").sendVKey(0)
+            session.findById("wnd[1]").sendVKey(12)
+            session.findById("wnd[0]").sendVKey(3)
+
+    def tentativa_exportacao(session, grid, coluna, sap_gui_path, pastad):
+        try:
+            print(f"➡️ Tentando com '{coluna}'")
+            grid.currentCellColumn = coluna
+            grid.clickCurrentCell()
+            realizar_exportacao(session, sap_gui_path)
+            processar_arquivos(sap_gui_path, pastad)
+            print(f"✅ Sucesso com '{coluna}'")
+            return True
+        except Exception as e:
+            print(f"❌ Falha com '{coluna}': {e}")
+            try: session.findById("wnd[1]").sendVKey(3)
+            except: pass
+            try: session.findById("wnd[0]").sendVKey(3)
+            except: pass
+            return False
 
 
 
@@ -203,48 +221,26 @@ def executar_rotina():
             grid.selectedRows = str(row_index)
             grid.currentCellRow = row_index
 
-            tentativa_sucesso = False
-
-            # Tentativa com DOCNUM
-            try:
-                print("➡️ Tentando com 'DOCNUM'")
-                grid.currentCellColumn = "DOCNUM"
-                grid.clickCurrentCell()
-                realizar_exportacao(session, sap_gui_path)
-                tentativa_sucesso = True
-            except Exception as e_doc:
-                print(f"❌ Falha com 'DOCNUM': {e_doc}")
-
-            if tentativa_sucesso:
-                try:
-                    processar_arquivos(sap_gui_path, pastad)
-                    print(f"✅ Sucesso com 'DOCNUM' na linha {row_index}")
-                except Exception as e_proc:
-                    print(f"⚠️ Sucesso parcial com 'DOCNUM', mas falhou no pós-processamento: {e_proc}")
+            if tentativa_exportacao(session, grid, "DOCNUM", sap_gui_path, pastad):
                 row_index += 1
-                continue  # pula pra próxima linha
+                continue
 
-            # Se falhou com DOCNUM, tenta com BELNR
-            try:
-                print("➡️ Tentando com 'BELNR'")
-                grid.currentCellColumn = "BELNR"
-                grid.clickCurrentCell()
-                realizar_exportacao(session, sap_gui_path)
-                processar_arquivos(sap_gui_path, pastad)
-                print(f"✅ Sucesso com 'BELNR' na linha {row_index}")
-            except Exception as e_belnr:
-                print(f"❌ Falha com 'BELNR': {e_belnr}")
-                try: session.findById("wnd[1]").sendVKey(3)
-                except: pass
-                try: session.findById("wnd[0]").sendVKey(3)
-                except: pass
+            if tentativa_exportacao(session, grid, "BELNR", sap_gui_path, pastad):
+                row_index += 1
+                continue
 
-            row_index += 1
-
+            print(f"⚠️ Nenhuma tentativa funcionou para linha {row_index}")
+        
         except Exception as e:
-            print(f"\n🚨 Erro inesperado na linha {row_index}: {e}")
+            print(f"🚨 Erro inesperado na linha {row_index}: {e}")
+            break
+            
 
-    close_process("saplogon.exe")   
+
+
+
+    # close_process("saplogon.exe")
+    messagebox.showinfo("Execução", "Rotina executada com sucesso!")
 
 
 # Criando a janela principal
