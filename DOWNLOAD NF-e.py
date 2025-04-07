@@ -48,11 +48,11 @@ def fazer_login():
     sapguiauto = win32com.client.GetObject("SAPGUI")
     application = sapguiauto.GetScriptingEngine
     try:
-        connection = application.OpenConnection("NOVO PVR - Qualidade SAP ECC", True)
+        connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
     except Exception as e:
         print(f"Conexão 'PVR - Produção (Externo)' não encontrada. Tentando 'PVR - Produção (Interno)'...")
         try:
-            connection = application.OpenConnection("NOVO PVR - Qualidade SAP ECC", True)
+            connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
         except Exception as e:
             print(f"Ocorreu um erro ao abrir a conexão: {e}")
 
