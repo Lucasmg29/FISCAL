@@ -11,9 +11,9 @@ import shutil
 
 def fazer_login():
     try: 
-        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
+        caminho_executavel_sap = r'C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe'
     except:
-        caminho_executavel_sap = r'C:\Program Files (x86)\SAP\FrontEnd\SAPGUI\saplogon.exe'
+        caminho_executavel_sap = r'C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe'
     
     # Verifique o caminho absoluto
     print(f"Caminho do executável: {caminho_executavel_sap}")
@@ -48,11 +48,11 @@ def fazer_login():
     sapguiauto = win32com.client.GetObject("SAPGUI")
     application = sapguiauto.GetScriptingEngine
     try:
-        connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
+        connection = application.OpenConnection("NOVO QVR - Qualidade SAP ECC", True)
     except Exception as e:
         print(f"Conexão 'PVR - Produção (Externo)' não encontrada. Tentando 'PVR - Produção (Interno)'...")
         try:
-            connection = application.OpenConnection("NOVO PVR - Produção SAP ECC", True)
+            connection = application.OpenConnection("NOVO QVR - Qualidade SAP ECC", True)
         except Exception as e:
             print(f"Ocorreu um erro ao abrir a conexão: {e}")
 
@@ -165,6 +165,17 @@ def executar_rotina():
     
                     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton("%GOS_TOOLBOX")
                     session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem("%GOS_VIEW_ATTA")
+                    
+                    session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("&MB_FILTER")
+                    session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").selectedRows = "0"
+                    session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell").doubleClickCurrentCell()
+                    session.findById("wnd[2]/usr/subSUB_DYN0500:SAPLSKBH:0600/btn600_BUTTON").press()
+                    session.findById("wnd[3]").sendVKey(4)
+                    session.findById("wnd[4]/usr/lbl[1,4]").setFocus
+                    session.findById("wnd[4]/usr/lbl[1,4]").caretPosition = 0
+                    session.findById("wnd[4]").sendVKey(2)
+                    session.findById("wnd[3]/tbar[0]/btn[0]").press()
+
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").currentCellColumn = "BITM_DESCR"
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").selectedRows = "0"
                     session.findById("wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell").pressToolbarButton("%ATTA_EXPORT")
@@ -293,4 +304,3 @@ button_executar.bind("<Leave>", on_leave)
 
 # Inicializa a interface
 root.mainloop()
-
